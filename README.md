@@ -23,6 +23,8 @@ After installing the firmware on the device, you need to install the mobile appl
 
 ![image](screen_lamp.jpg)
 
+![image](Photo.JPG)
+
 
 ## How to write firmware on device
 
