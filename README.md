@@ -28,6 +28,9 @@ After installing the firmware on the device, you need to install the mobile appl
 
 ## How to write firmware on device
 
+
+Go to your project folder, and then go to the firmware folder, in this folder open a command prompt.
+
 1. Need have:  
      `python` (>= v3) installed. You can control it in terminal      
     ```
@@ -69,6 +72,17 @@ If you have error "can't open device "/dev/ttyUSB0": Permission denied" follow L
 
 CLI guide https://docs.platformio.org/en/latest/core/userguide/index.html
 
+## Physical control
+
+To turn on the lamp, tap and hold the top of the device for a second.
+To switch the lamp modes, touch the top of the device. The modes are switched sequentially each time you press.
+To turn off the lamp, tap and hold the top of the device for a second.
+To reset the lamp settings, use the “Reset” button located at the bottom of the device. Use a paperclip or similar object to press the button.
+
+## Custom firmware
+
+Fill free to fork this firmware and create you own products with custom functionality.
+Detailed instruction you could find in our [blog](https://2smart.com/blog/tpost/ebvsii6y21-how-to-write-firmware-for-an-iot-device).
 
 ## To Do
 * [ ] Add more modes
