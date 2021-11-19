@@ -2,12 +2,15 @@
 
 #include <ArduinoJson.h>
 
-#include "file_system.h"
+#include "file_system/src/file_system.h"
 #include "gpio.h"
-#include "utils.h"
+#include "lenta.h"
+#include "utils/src/utils.h"
 
 WebServer::WebServer(Device *device) {
     device_ = device;
+    // cppcheck-suppress noCopyConstructor
+    // cppcheck-suppress noOperatorEq
     server_ = new AsyncWebServer(kPort_);
 }
 
@@ -190,8 +193,7 @@ void WebServer::SetupWebServer() {
     server_->on("/setcredentials", HTTP_GET, [this](AsyncWebServerRequest *request) {
         OnRequestWithAuth(request, [this](AsyncWebServerRequest *request) {
             if (!request->hasParam("mail") || !request->hasParam("token") || !request->hasParam("hostname") ||
-                !request->hasParam("brokerPort") || !request->hasParam("product_id") ||
-                !request->hasParam("device_id")) {
+                !request->hasParam("brokerPort") || !request->hasParam("productId") || !request->hasParam("deviceId")) {
                 request->send(400, "text/plain", "Incorrect data");
                 return;
             }
@@ -200,8 +202,8 @@ void WebServer::SetupWebServer() {
             token = request->getParam("token")->value();
             host = request->getParam("hostname")->value();
             broker_port = request->getParam("brokerPort")->value();
-            product_id = request->getParam("product_id")->value();
-            device_id = request->getParam("device_id")->value();
+            product_id = request->getParam("productId")->value();
+            device_id = request->getParam("deviceId")->value();
             person_id = Sha256(person_mail);
 
             Serial.println(person_mail);
@@ -266,34 +268,53 @@ void WebServer::SetupWebServer() {
 
     server_->on("/update", HTTP_GET, [this](AsyncWebServerRequest *request) {
         OnRequestWithAuth(request, [this](AsyncWebServerRequest *request) {
-            if (!request->hasParam("output") || !request->hasParam("state")) {
+            if (!request->hasParam("state") || !request->hasParam("brightness") || !request->hasParam("mode")) {
                 request->send(400);
                 return;
             }
-            String output;
-            String state;
-            output = request->getParam("output")->value();
-            state = request->getParam("state")->value();
-            if (output == "relay1") {
-                Node *node = device_->GetNode("lenta");
-                Property *property = node->GetProperty("state");
-                property->SetValue(state == "1" ? "true" : "false");
-                request->send(200, "text/plain", "OK");
-            } else {
-                request->send(400);
-            }
+            Lenta *node = static_cast<Lenta *>(device_->GetNode("lenta"));
+            Property *property = node->GetProperty("brightness");
+            property->SetValue(request->getParam("brightness")->value());
+
+            node->PublishMode(request->getParam("mode")->value().toInt());
+            property = node->GetProperty("state");
+            property->SetValue(request->getParam("state")->value().toInt() ? "true" : "false");
+
+            uint8_t r_value, g_value, b_value = 0;
+
+            r_value = request->getParam("r")->value().toInt();
+            g_value = request->getParam("g")->value().toInt();
+            b_value = request->getParam("b")->value().toInt();
+
+            char message_buffer[12];  // length of RGB mess
+
+            snprintf(message_buffer, sizeof(message_buffer), "%d,%d,%d", r_value, g_value, b_value);
+            property = node->GetProperty("color");
+            property->SetValue(message_buffer);
+
+            request->send(200, "text/plain", "OK");
         });
     });
 
     server_->on("/settings", HTTP_GET, [this](AsyncWebServerRequest *request) {
         OnRequestWithAuth(request, [this](AsyncWebServerRequest *request) {
+            Serial.println("in settings");
+            Lenta *node = static_cast<Lenta *>(device_->GetNode("lenta"));
+            Property *property = node->GetProperty("brightness");
             StaticJsonDocument<256> doc;
-            Node *node = device_->GetNode("lenta");
-            Property *property = node->GetProperty("state");
-            String led_state = property->GetValue();
-            doc["data"]["relay1"] = led_state == "true" ? "1" : "0";
+
+            doc["data"]["brightness"] = property->GetValue().toInt();
+            property = node->GetProperty("state");
+            doc["data"]["state"] = property->GetValue() == "true";
+            property = node->GetProperty("mode");
+            doc["data"]["mode"] = property->GetValue();
+            property = node->GetProperty("color");
+            doc["data"]["color"] = property->GetValue();
+
+            doc["data"]["states"] = node->GetModes();
             String response;
             serializeJson(doc, response);
+            Serial.println(response);
             request->send(200, "application/json", response);
         });
     });

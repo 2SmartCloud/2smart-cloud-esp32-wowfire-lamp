@@ -45,20 +45,20 @@
                 </div>
                 <div class="row">
                     <div class="input-group m-3">
-                        <form id="uploadform" enctype="multipart/form-data" method="post" action="/firmware/upload" >
+                        <form id="uploadform" enctype="multipart/form-data" method="post" action="/firmware/upload">
                             <div class="customFile">
                                 <input id="newfile" name="inobinfile" type="file" class="custom-file-input" />
                                 <label class="custom-file-label" for="newfile" id="file-label">Choose file</label>
                                 <input type="submit" value="Upload" id="submitbtn" class="uploadFile" />
                             </div>
-                        </form>                                
+                        </form>
                     </div>
                 </div>
-                    <div class="currentVersion">
-                        <span id="currentVersion">Current version: %FIRMWARE%</span>
-                    </div>
+                <div class="currentVersion">
+                    <span id="currentVersion">Current version: %FIRMWARE%</span>
                 </div>
-            
+            </div>
+
         </div>
         <div class="card shadow my-5">
             <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
@@ -84,9 +84,9 @@
             let currentVersion;
             let tabs;
             let platformNavs;
-        
+
             const hostname = '';
-        
+
             window.onload = () => {
                 document.getElementById('pwchange').onclick = pwchange;
                 document.getElementById('reset').onclick = reset;
@@ -98,12 +98,12 @@
                 fileInput.onchange = upload;
                 const form = document.querySelector("form");
                 form.addEventListener("submit", async event => {
-                event.preventDefault();
-                const formData = new FormData(form)
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData
-                });
+                    event.preventDefault();
+                    const formData = new FormData(form)
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData
+                    });
                 });
             };
 
@@ -111,22 +111,22 @@
                 document.getElementById('uploadform').submit();
                 return false;
             }
-        
+
             function pwchange() {
                 let newPassword;
-        
+
                 while (true) {
                     newPassword = prompt("Input new password");
                     if (newPassword == null || newPassword == "") return;
-                    else break;				
-                }		
-                const params = `newpass=${newPassword}`;	
-       
+                    else break;
+                }
+                const params = `newpass=${newPassword}`;
+
                 const xhttp = new XMLHttpRequest();
-                xhttp.onreadystatechange = function() {
+                xhttp.onreadystatechange = function () {
                     if (xhttp.readyState == 4) {
                         if (xhttp.status == 200) {
-                            alert(xhttp.responseText);    
+                            alert(xhttp.responseText);
                         } else if (xhttp.status == 0) {
                             alert("Server closed the connection abruptly!");
                             location.reload();
@@ -136,68 +136,68 @@
                         }
                     }
                 };
-                xhttp.open("GET", `/newauthpass?${params}`, true); 
-                xhttp.send();			
+                xhttp.open("GET", `/newauthpass?${params}`, true);
+                xhttp.send();
             }
 
-        function reset() {
-            const res = confirm('Are you sure you want to reset your device to factory settings?');
-            if (res) {
-                const xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("GET", `/resetdefault`, true);
-                xmlhttp.onreadystatechange = function () {
-                    if (xmlhttp.readyState == 4) {
-                        if (xmlhttp.status == 200) alert(xmlhttp.responseText);
-                    }
-                };
-                xmlhttp.send(null);
+            function reset() {
+                const res = confirm('Are you sure you want to reset your device to factory settings?');
+                if (res) {
+                    const xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("GET", `/resetdefault`, true);
+                    xmlhttp.onreadystatechange = function () {
+                        if (xmlhttp.readyState == 4) {
+                            if (xmlhttp.status == 200) alert(xmlhttp.responseText);
+                        }
+                    };
+                    xmlhttp.send(null);
+                }
             }
-        }
 
-        function reboot() {
-            const res = confirm('Are you sure you want to reboot your device?');
-            if (res) {
-                const xmlhttp = new XMLHttpRequest();
-                xmlhttp.open("GET", `/reboot`, true);
-                xmlhttp.onreadystatechange = function () {
-                    if (xmlhttp.readyState == 4) {
-                        if (xmlhttp.status == 200) alert(xmlhttp.responseText);
-                    }
-                };
-                xmlhttp.send(null);
+            function reboot() {
+                const res = confirm('Are you sure you want to reboot your device?');
+                if (res) {
+                    const xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("GET", `/reboot`, true);
+                    xmlhttp.onreadystatechange = function () {
+                        if (xmlhttp.readyState == 4) {
+                            if (xmlhttp.status == 200) alert(xmlhttp.responseText);
+                        }
+                    };
+                    xmlhttp.send(null);
+                }
             }
-        }
 
-        function upload() {
-            document.getElementById('submitbtn').disabled = true;
-            const upload_path = "/firmware/upload"
-            const fileInput = document.getElementById("newfile").files;
-            /* Max size of an individual file. Make sure this
-            * value is same as that set in file_server.c */
-            const MAX_FILE_SIZE = 2048*1024;
-            const MAX_FILE_SIZE_STR = "2048KB";
-            const availableFormats = ["application/octet-stream"];
-            if (fileInput.length == 0) {
-                alert("No file selected!"); 
-            } else if (fileInput[0].size > MAX_FILE_SIZE) {
-                alert(`File size must be less than ${MAX_FILE_SIZE_STR}!`);
-            } else if (!availableFormats.includes(fileInput[0].type)) {
-                alert(`File type must be '.bin'`);
-            } else {
-                document.getElementById('submitbtn').disabled = false;
-                document.getElementById('file-label').innerHTML = fileInput[0].name;
+            function upload() {
+                document.getElementById('submitbtn').disabled = true;
+                const upload_path = "/firmware/upload"
+                const fileInput = document.getElementById("newfile").files;
+                /* Max size of an individual file. Make sure this
+                * value is same as that set in file_server.c */
+                const MAX_FILE_SIZE = 2048 * 1024;
+                const MAX_FILE_SIZE_STR = "2048KB";
+                const availableFormats = ["application/octet-stream"];
+                if (fileInput.length == 0) {
+                    alert("No file selected!");
+                } else if (fileInput[0].size > MAX_FILE_SIZE) {
+                    alert(`File size must be less than ${MAX_FILE_SIZE_STR}!`);
+                } else if (!availableFormats.includes(fileInput[0].type)) {
+                    alert(`File type must be '.bin'`);
+                } else {
+                    document.getElementById('submitbtn').disabled = false;
+                    document.getElementById('file-label').innerHTML = fileInput[0].name;
+                }
             }
-        }
 
-        function locationDetector() {
-            const pathname = window.location.pathname.replace(/^\//, '') || 'index.html';
-            const header = document.getElementById('header');
-            const el = header.querySelectorAll(`a[href$="${pathname}"]`);
+            function locationDetector() {
+                const pathname = window.location.pathname.replace(/^\//, '') || 'index.html';
+                const header = document.getElementById('header');
+                const el = header.querySelectorAll(`a[href$="${pathname}"]`);
 
-            if (el.length) el[0].classList.add('bold');
-        }
-        locationDetector();
-    </script>
+                if (el.length) el[0].classList.add('bold');
+            }
+            locationDetector();
+        </script>
 </body>
 
 </html>

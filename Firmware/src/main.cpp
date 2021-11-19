@@ -1,18 +1,12 @@
 #include "main.h"
 
-#include "custom_nodes/auto_upd_firmw/auto_upd_firmw.h"
-#include "custom_nodes/lenta/lenta.h"
-#include "custom_nodes/notifications/notifications.h"
-#include "custom_nodes/relay/property/relay_state.h"
-#include "file_system.h"
+#include "file_system/src/file_system.h"
 #include "gpio.h"
 #include "homie.h"
-#include "mqtt_client.h"
-#include "notifier/notifier.h"
-#include "ntp_time_client/ntp_time_client.h"
+#include "lenta.h"
 #include "web_server.h"
-#include "wifi_ap.h"
-#include "wifi_client.h"
+#include "wifi_ap/src/wifi_ap.h"
+#include "wifi_client/src/wifi_client.h"
 
 MqttClient *mqtt_client = new MqttClient();
 Homie homie(mqtt_client);
@@ -43,7 +37,6 @@ void setup() {
     // ---------------------------------------------- Homie convention init
     AutoUpdateFw *firmware = new AutoUpdateFw("Firmware", "firmware", &device);                   // (name, id, device)
     Notifications *notifications = new Notifications("Notifications", "notifications", &device);  // (name, id, device)
-    Node *relay = new Node("Relay", "relay", &device);                                            // (name, id,device)
 
     Property *update_status = new Property("update status", "updatestate", firmware, SENSOR, false, false, "string");
     Property *update_button = new Property("update button", "update", firmware, SENSOR, true, false, "boolean");
@@ -55,8 +48,6 @@ void setup() {
         new Property("System Notifications", "system", notifications, SENSOR, true, true, "boolean");
     Property *update_notification =
         new Property("Update Notifications", "update", notifications, SENSOR, true, true, "boolean");
-
-    RelayState *relay_state = new RelayState("State", "state", relay, SENSOR, true, true, "boolean");
 
     DeviceData device_data{device_name, device_version, product_id.c_str(), ip_addr.c_str(), "esp32",
                            mac.c_str(), "ready",        device_id.c_str()};
@@ -80,9 +71,6 @@ void setup() {
     notifications->AddProperty(update_notification);
     device.AddNode(notifications);
 
-    relay->AddProperty(relay_state);
-    device.AddNode(relay);
-
     /* -------------------- Start init your nodes and properties --------------------*/
 
     Lenta *lenta = new Lenta("Lenta", "lenta", &device);  // (name, id, device)
@@ -91,18 +79,17 @@ void setup() {
     Property *lenta_color = new Property("color", "color", lenta, SENSOR, true, true, "color", "rgb");
     Property *lenta_brightness =
         new Property("brightness", "brightness", lenta, SENSOR, true, true, "integer", "0:100");
-    Property *lenta_quantity = new Property("quantity", "quantity", lenta, SENSOR, true, true, "integer");
 
     lenta->AddProperty(lenta_status);
     lenta->AddProperty(lenta_mode);
     lenta->AddProperty(lenta_color);
     lenta->AddProperty(lenta_brightness);
-    lenta->AddProperty(lenta_quantity);
     device.AddNode(lenta);
 
     /* -------------------- End init your nodes and properties --------------------*/
 
     homie.SetDevice(&device);
+    device.Init();
 
     WifiAp wifiAP;
     if (ssid_name == "Wifi_Name" || ssid_name == "") {

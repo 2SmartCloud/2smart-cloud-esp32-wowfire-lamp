@@ -3,7 +3,7 @@
 #include <ESPAsyncWebServer.h>
 #include <Update.h>
 
-#include "device/device.h"
+#include "homie.h"
 
 extern const char *http_username;
 

@@ -2,8 +2,9 @@
 
 #define FOR_i(x, y) for (int i = (x); i < (y); i++)
 
-#include "custom_nodes/lenta/timerMillis.h"
-#include "file_system.h"
+#include "file_system/src/file_system.h"
+#include "timerMillis.h"
+
 timerMillis effTmr(100, true);
 
 Lenta::Lenta(const char* name, const char* id, Device* device) : Node(name, id, device) {}
@@ -14,10 +15,10 @@ bool Lenta::Init(Homie* homie) {  // initialize toggles for notification
     if (!LoadLentaSettings()) {
         ls.brightness_ = kDefaultBrigthness_;
         ls.state_ = true;
-        ls.mode_ = RAINBOW;
-        ls.red_ = kDefaultColor_;
-        ls.green_ = kDefaultColor_ * 2;
-        ls.blue_ = kDefaultColor_ * 3;
+        ls.mode_ = FIRE;
+        ls.red_ = kDefaultColorR_;
+        ls.green_ = kDefaultColorG_;
+        ls.blue_ = kDefaultColorB_;
         ls.quantity_ = kDefaultLedsQuantity_;
     }
     leds_ptr_ = new CRGB[ls.quantity_];
@@ -75,12 +76,6 @@ void Lenta::HandleCurrentState() {
         properties_.find("brightness")->second->SetHasNewValue(false);
     }
 
-    if (properties_.find("quantity")->second->HasNewValue()) {
-        ls.quantity_ = properties_.find("quantity")->second->GetValue().toInt();
-        new_ls_state_ = NEW_BRIGHTNESS;
-        if (SaveLentaSettings()) ESP.restart();
-    }
-
     switch (new_ls_state_) {
         case NO_CHANGES:
             break;
@@ -117,6 +112,9 @@ void Lenta::HandleCurrentState() {
                 break;
             case HAMELEON:
                 Hameleon();
+                break;
+            case MATRIX:
+                Matrix();
                 break;
         }
     } else if (new_ls_state_) {
@@ -193,8 +191,7 @@ String Lenta::GetModes() {
 }
 
 bool Lenta::LoadLentaSettings() {
-    ReadSettings("/lentaconf.txt", reinterpret_cast<byte*>(&ls), sizeof(ls));
-
+    if (!ReadSettings("/lentaconf.txt", reinterpret_cast<byte*>(&ls), sizeof(ls))) return false;
     String state_in_string = ls.state_ ? "true" : "false";
     properties_.find("state")->second->SetValue(state_in_string);
     properties_.find("state")->second->SetHasNewValue(false);
@@ -212,11 +209,16 @@ bool Lenta::LoadLentaSettings() {
     properties_.find("color")->second->SetValue(message_buffer);
     properties_.find("color")->second->SetHasNewValue(false);
 
-    ls.quantity_ = 256;
-    properties_.find("quantity")->second->SetValue(String(ls.quantity_));
-    properties_.find("quantity")->second->SetHasNewValue(false);
+    ls.quantity_ = kDefaultLedsQuantity_;
 
     return true;
+}
+
+void Lenta::PublishMode(uint8_t mode_num) {
+    if (mode_num > modes_.size() - 1) return;
+    ls.mode_ = mode_num;
+    String state_in_string = modes_.find(ls.mode_)->second;
+    properties_.find("mode")->second->SetValue(state_in_string);
 }
 
 bool Lenta::SaveLentaSettings() { return WriteSettings("/lentaconf.txt", reinterpret_cast<byte*>(&ls), sizeof(ls)); }
@@ -226,7 +228,7 @@ void Lenta::Parts() {
     uint32_t nowWeekMs = random16();
     uint16_t speed = 100;
 
-    FOR_i(0, length_ * width_) leds_ptr_[i].fadeToBlackBy(70);
+    FOR_i(0, kDefaultLedsQuantity_) leds_ptr_[i].fadeToBlackBy(70);
     {
         uint16_t rndVal = 0;
         byte amount = (getScale() >> 3) + 1;
@@ -255,10 +257,10 @@ void Lenta::Konfeti() {
 
     byte amount = (getScale() >> 3) + 1;
     FOR_i(0, amount) {
-        int x = random(0, length_ * width_);
+        int x = random(0, kDefaultLedsQuantity_);
         if (leds_ptr_[x] == CRGB(0, 0, 0)) leds_ptr_[x] = CHSV(random8(255), 255, 255);
     }
-    FOR_i(0, length_ * width_) {
+    FOR_i(0, kDefaultLedsQuantity_) {
         if (leds_ptr_[i].r >= 10 || leds_ptr_[i].g >= 10 || leds_ptr_[i].b >= 10)
             leds_ptr_[i].fadeToBlackBy(speed / 2 + 1);
         else
@@ -290,6 +292,13 @@ uint16_t Lenta::getPix(int x, int y) {
         return (thisY * matrixW + thisX);  // чётная строка
     else
         return (thisY * matrixW + matrixW - thisX - 1);  // нечётная строка
+}
+
+uint32_t Lenta::getPixColor(int x, int y) {
+    int thisPix = getPix(x, y);
+    if (thisPix < 0 || thisPix >= kDefaultLedsQuantity_) return 0;
+    return (((uint32_t)leds_ptr_[thisPix].r << 16) | ((int64_t)leds_ptr_[thisPix].g << 8) |
+            (int64_t)leds_ptr_[thisPix].b);
 }
 
 void Lenta::Fire(byte scale, int len) {
@@ -345,5 +354,42 @@ void Lenta::Fire(byte scale, int len) {
     }
     ff_y++;
     if (ff_y & 0x01) ff_z++;
+    LEDS.show();
+}
+
+#define COLOR1 0x00aa00  // максимальная яркость   170
+#define COLOR2 0x00ff00  // начальный        255
+#define COLOR3 0x006e00  //  пиксель почти погас 110
+#define COLOR4 0x003c00  //  пиксель почти погас   60
+#define COLOR5 0x003200  // затухание медленней  50
+#define COLOR6 0x00a000  //  резко снижаем яркость  160
+
+void Lenta::Matrix() {  // ------------- Matrix ---------------
+    if (!effTmr.isReady()) return;
+
+    const uint8_t density = 20;  // меньше = плотнее
+    for (uint8_t x = 0U; x < length_; x++) {
+        for (uint8_t y = 0U; y < width_; y++) {
+            uint32_t thisColor = getPixColor(x, y);        // берём цвет нашего пикселя
+            uint32_t upperColor = getPixColor(x, y + 1U);  // берём цвет пикселя над нашим
+            if (upperColor >= COLOR1 && random(7 * width_) != 0U) {  // если выше нас максимальная яркость,
+                setPix(x, y, upperColor);  // игнорим этот факт с некой вероятностью или опускаем цепочку ниже
+            } else if (thisColor == 0U &&
+                       random(density) == 0U) {  // если наш пиксель ещё не горит, иногда зажигаем новые цепочки
+                setPix(x, y, COLOR2);
+            } else if (thisColor <= COLOR3) {  // если наш пиксель почти погас, стараемся сделать затухание медленней
+                if (thisColor >= COLOR4) {
+                    setPix(x, y, COLOR5);
+                } else {
+                    if (thisColor != 0U) setPix(x, y, 0U);
+                }
+            } else {
+                if (thisColor >= COLOR1)  // если наш пиксель максимальной яркости, резко снижаем яркость
+                    setPix(x, y, 0x00a100);
+                else
+                    setPix(x, y, thisColor - 0x002800);  // в остальных случаях снижаем яркость на 1 уровень 40
+            }
+        }
+    }
     LEDS.show();
 }

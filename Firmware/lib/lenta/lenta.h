@@ -7,7 +7,7 @@
 #include <map>
 #include <string>
 
-#include "node/node.h"
+#include "homie.h"
 
 #define DATA_PIN 18
 
@@ -21,6 +21,8 @@ class Lenta : public Node {
 
     String GetModes();
 
+    void PublishMode(uint8_t mode_num);
+
  private:
     typedef struct {
         bool state_;    // on/off
@@ -33,9 +35,7 @@ class Lenta : public Node {
     } LsSettings;
 
     enum LsNewState { NO_CHANGES, NEW_COLOR, NEW_BRIGHTNESS, NEW_MODE };
-    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON };
-
-    LsSettings ls = {1, 0, 0, 0, 0, 0, 1};
+    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON, MATRIX };
 
     void TurnOffLs();
     void Rainbow();
@@ -45,21 +45,25 @@ class Lenta : public Node {
     void Fire(byte scale, int len);
     void Konfeti();
     void Hameleon();
+    void Matrix();
 
     void ExtractColor(String color_string);
 
     bool SaveLentaSettings();
     bool LoadLentaSettings();
 
-    const uint16_t kMax_ma_ = 1500;  // max mA, for library
-
-    const uint8_t kDefaultBrigthness_ = 10;
-    const uint8_t kDefaultColor_ = 80;
-    const uint16_t kDefaultLedsQuantity_ = 300;         // 5m led strip
-    const uint16_t kSaveLentaSettingsTime_ = 5 * 1000;  // 5s
+    const uint16_t kMax_ma_ = 1300;  // max mA, for library
 
     const uint8_t length_ = 16;
     const uint8_t width_ = 16;
+
+    const uint8_t kDefaultBrigthness_ = 10;
+    const uint8_t kDefaultColorR_ = 50;
+    const uint8_t kDefaultColorG_ = 200;
+    const uint8_t kDefaultColorB_ = 200;
+    const uint16_t kDefaultLedsQuantity_ = length_ * width_;
+    const uint16_t kSaveLentaSettingsTime_ = 5 * 1000;  // 5s
+
     byte scale_ = 100;  // масштаб (0.. 255)
 
     bool new_data_for_save_ = false;
@@ -72,11 +76,14 @@ class Lenta : public Node {
     uint8_t counter_ = 0;
     uint32_t last_update_time_ = 0;
 
-    std::map<uint8_t, String> modes_ = {{RAINBOW, "rainbow"},  {COLOR, "color"}, {DISCO, "disco"},
-                                        {FIRE, "fire"},        {PARTS, "parts"}, {KONFETTI, "konfetti"},
-                                        {HAMELEON, "hameleon"}};
+    std::map<uint8_t, String> modes_ = {{RAINBOW, "rainbow"},   {COLOR, "color"},  {DISCO, "disco"},
+                                        {FIRE, "fire"},         {PARTS, "parts"},  {KONFETTI, "konfetti"},
+                                        {HAMELEON, "hameleon"}, {MATRIX, "matrix"}};
 
-    EncButton<EB_TICK, 13> button_;
+    EncButton<EB_TICK, 19> button_;
+
+    LsSettings ls = {
+        true, FIRE, kDefaultBrigthness_, kDefaultColorR_, kDefaultColorG_, kDefaultColorB_, kDefaultLedsQuantity_};
 
     // ====================================================================================================================
 
@@ -89,4 +96,5 @@ class Lenta : public Node {
 
     // получить номер пикселя в ленте по координатам
     uint16_t getPix(int x, int y);
+    uint32_t getPixColor(int x, int y);
 };
