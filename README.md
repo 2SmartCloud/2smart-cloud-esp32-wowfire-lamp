@@ -40,6 +40,7 @@ Detailed instruction you could find in our [blog](https://2smart.com/blog/tpost/
 
 ## Instructions 
 [Custom Effects](Custom-Effects.md)
+
 [Firmware-Uploading](Firmware-Uploading.md)
 
 ## To Do
