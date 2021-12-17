@@ -1,24 +1,28 @@
-## Добавление эффектов в прошивку на примере режима DNA
-Для добавления собственных эффектов в прошивку необходимо:
-1. Сделать свое ответвление (fork) проекта.
+## How to create custom effects on "DNA" example
+
+For adding custom effects to this firmwate you need to:
+1. Make a fork of [wowfire-lamp](https://github.com/2SmartCloud/2smart-cloud-esp32-wowfire-lamp).
   
-2. Клонировать проект уже со своего гитхаба. Сделать это можно командой git clone, вставив скопированную ссылку.
-  
-3. После клонирования проекта необходимо создать ветку и внести в нее изменения:
-   a) в lib/lenta/lenta.h добавить метод эффекта
+2. Clone the project using ```git clone``` from your github account.
    
-   b) в LedStripStates добавить название эффекта:
-
-   c) в modes_ к названию эффекта привязать название для мобильного приложения:
-
-   d) в lib/lenta/lenta.cpp добавить тело метода с описанием всей логики эффекта. Если необходимо, добавить вспомогательные методы.
-Внимание! Не забудьте, что свечение диодов – также задача режима, для которой необходимо использовать команду LEDS.show();.
+3. Create the new brnach and add your changes:
+   a) add method of your effect in `lib/lenta/lenta.h`
+   
+   b) add the effect name into `LedStripStates`
+   
+   c) attach effect name for mobile application in `modes_`
+   
+   d) add the body of the method with a description of all the logic of the effect in `lib/lenta/lenta.cpp` . Add helper methods if needed.
+      Attention! Do not forget that LED lighting is also a mode task for which the `LEDS.show ();` command must be used.
+      
+   e) add effect to switch in `HandleCurrentState`
+   
+   f) build the firmware with the pio run command (in this case, you need to be in the Firmware folder).
      
-   e) в HandleCurrentState добавить режим в switch: 
-
-   f) Собрать прошивку командой pio run (при этом нужно находиться в папке Firmware).
-     
-   g) Готовый файл прошивки будет находиться в папке проекта -> Firmware/.pio/build/esp32dev/firmware.bin (если при сборке не возникли ошибки ;) )
+   g) ready-to-upload `firmware.bin` will be in the `Firmware/.pio/build/esp32dev` folder (enadle hidden files to find it)
+   
+   
+  
 
 
 
