@@ -84,6 +84,10 @@ To reset the lamp settings, use the “Reset” button located at the bottom of 
 Fill free to fork this firmware and create you own products with custom functionality.
 Detailed instruction you could find in our [blog](https://2smart.com/blog/tpost/ebvsii6y21-how-to-write-firmware-for-an-iot-device).
 
+
+## Instructions 
+[Custom Effects]()
+
 ## To Do
 * [ ] Add more modes
 * [ ] Add sheduled commands
