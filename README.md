@@ -86,7 +86,7 @@ Detailed instruction you could find in our [blog](https://2smart.com/blog/tpost/
 
 
 ## Instructions 
-[Custom Effects]()
+[Custom Effects](Custom-Effects.md)
 
 ## To Do
 * [ ] Add more modes
