@@ -1,4 +1,4 @@
-## 2Smart Gyver Lamp
+## WOW Fire Lamp
 A custom controller for controlling an addressable LED matrix based on an ESP32 microcontroller. Ideal for assembling a fire lamp type device from [AlexGyver](https://alexgyver.ru/gyverlamp/). The device supports full integration with the mobile application [2Smart Cloud](https://2smart.com) on [IOS](https://apps.apple.com/ru/app/2smart-cloud/id1539188825) and [Android](https://play.google.com/store/apps/details?id=com.smart.microcloud.app&hl=ru&gl=US). 
 
 With the help of the mobile application, you will be able to:
