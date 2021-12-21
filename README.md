@@ -16,7 +16,7 @@ In addition to the control capabilities via a mobile application, the device has
 
 Materials for printing your own boards and accessories for the device can be found in the corresponding folders of this repository. [3d model](https://www.thingiverse.com/thing:3917465) of the printed case was taken from a public source, but any other case from custom components can be used.
 
-The device firmware is developed based on the public [2Smart Cloud SDK](https://github.com/2SmartCloud/2smart-cloud-esp32-boilerplate) for ESP32.
+The device firmware is developed based on the public [2Smart Cloud SDK](https://github.com/2SmartCloud/2smart-cloud-cpp-sdk) for ESP32.
 
 ### Connecting to the mobile application
 After installing the firmware on the device, you need to install the mobile application [2Smart Cloud](https://2smart.com) and register. Then find the 2Smart Gyver Lamp in the device market and follow the connection instructions. 
