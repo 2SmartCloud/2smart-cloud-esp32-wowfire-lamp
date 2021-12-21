@@ -26,7 +26,7 @@ For adding custom effects to this firmwate you need to:
 
    ![](static/5.png)
 
-   f) build the firmware with the ```pio run`` command (in this case, you need to be in the Firmware folder).
+   f) build the firmware with the ```pio run``` command (in this case, you need to be in the Firmware folder).
 
    ![](static/6.png)
 
