@@ -116,6 +116,10 @@ void Lenta::HandleCurrentState() {
             case MATRIX:
                 Matrix();
                 break;
+            case DNA:
+                loading = true;
+                DNAroutine();
+                break;
         }
     } else if (new_ls_state_) {
         TurnOffLs();
@@ -393,3 +397,61 @@ void Lenta::Matrix() {  // ------------- Matrix ---------------
     }
     LEDS.show();
 }
+
+void Lenta::DNAroutine() {
+    uint8_t step = 15;
+
+    if (loading) {
+        loading = false;
+        deltaHue = hue > 50U;
+        if (deltaHue) hue = 101U - hue;
+        hue = 255U - map(51U - hue, 1U, 50U, 0, 255U);
+    }
+
+    double freq = 3000;
+    float mn = 255.0 / 13.8;
+
+    fadeToBlackBy(leds_ptr_, kDefaultLedsQuantity_, step * 2);
+    uint16_t ms = millis();
+
+    if (deltaHue) {
+        for (uint8_t i = 0; i < width_; i++) {
+            uint32_t x = beatsin16(step, 0, (length_ - 1) * 256, 0, i * freq);
+            uint32_t y = i * 256;
+
+            CRGB col = CHSV(ms / 29 + i * 255 / (width_ - 1), 255, qadd8(hue, beatsin8(step, 60, 255U, 0, i * mn)));
+
+            WuPixel(y, x, &col);
+        }
+    } else {
+        for (uint8_t i = 0; i < length_; i++) {
+            uint32_t x = beatsin16(step, 0, (width_ - 1) * 256, 0, i * freq);
+            uint32_t y = i * 256;
+
+            CRGB col = CHSV(ms / 29 + i * 255 / (length_ - 1), 255, qadd8(hue, beatsin8(step, 60, 255U, 0, i * mn)));
+            WuPixel(x, y, &col);
+        }
+    }
+
+    blur2d(leds_ptr_, width_, length_, 16);
+    LEDS.show();
+}
+
+void Lenta::WuPixel(uint32_t x, uint32_t y, CRGB* col) {  // awesome WuPixel procedure by reddit u/sutaburosu
+    // extract the fractional parts and derive their inverses
+    uint8_t xx = x & 0xff, yy = y & 0xff, ix = 255 - xx, iy = 255 - yy;
+// calculate the intensities for each affected pixel
+#define WU_WEIGHT(a, b) ((uint8_t)(((a) * (b) + (a) + (b)) >> 8))
+    uint8_t wu[4] = {WU_WEIGHT(ix, iy), WU_WEIGHT(xx, iy), WU_WEIGHT(ix, yy), WU_WEIGHT(xx, yy)};
+    // multiply the intensities by the colour, and saturating-add them to the pixels
+    for (uint8_t i = 0; i < 4; i++) {
+        uint16_t xy = (x >> 8) + (i & 1) + (((y >> 8) + ((i >> 1) & 1)) * 16);
+        if (xy < kDefaultLedsQuantity_) {
+            leds_ptr_[xy].r = qadd8(leds_ptr_[xy].r, col->r * wu[i] >> 8);
+            leds_ptr_[xy].g = qadd8(leds_ptr_[xy].g, col->g * wu[i] >> 8);
+            leds_ptr_[xy].b = qadd8(leds_ptr_[xy].b, col->b * wu[i] >> 8);
+        }
+    }
+}
+
+uint16_t XY(uint8_t x, uint8_t y) { return (y * 16 + x); }
