@@ -115,11 +115,11 @@ void setup() {
     ip_addr = WiFi.localIP().toString();
     Serial.print("IP: ");
     Serial.println(ip_addr);
+    dev_ip->SetValue(ip_addr);
 
     while (!homie.Init(person_id, host, broker_port, token, HandleMessage)) {
         device.HandleCurrentState();
     }
-    dev_ip->SetValue(ip_addr);
 
     // ---------------------------------------------- Homie convention end
 }

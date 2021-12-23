@@ -35,7 +35,7 @@ class Lenta : public Node {
     } LsSettings;
 
     enum LsNewState { NO_CHANGES, NEW_COLOR, NEW_BRIGHTNESS, NEW_MODE };
-    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON, MATRIX };
+    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON, MATRIX, DNA };
 
     void TurnOffLs();
     void Rainbow();
@@ -46,6 +46,7 @@ class Lenta : public Node {
     void Konfeti();
     void Hameleon();
     void Matrix();
+    void DNAroutine();
 
     void ExtractColor(String color_string);
 
@@ -65,6 +66,8 @@ class Lenta : public Node {
     const uint16_t kSaveLentaSettingsTime_ = 5 * 1000;  // 5s
 
     byte scale_ = 100;  // масштаб (0.. 255)
+    uint8_t hue = 10;
+    uint8_t deltaHue = 0;
 
     bool new_data_for_save_ = false;
 
@@ -76,9 +79,9 @@ class Lenta : public Node {
     uint8_t counter_ = 0;
     uint32_t last_update_time_ = 0;
 
-    std::map<uint8_t, String> modes_ = {{RAINBOW, "rainbow"},   {COLOR, "color"},  {DISCO, "disco"},
-                                        {FIRE, "fire"},         {PARTS, "parts"},  {KONFETTI, "konfetti"},
-                                        {HAMELEON, "hameleon"}, {MATRIX, "matrix"}};
+    std::map<uint8_t, String> modes_ = {{RAINBOW, "rainbow"},   {COLOR, "color"},   {DISCO, "disco"},
+                                        {FIRE, "fire"},         {PARTS, "parts"},   {KONFETTI, "konfetti"},
+                                        {HAMELEON, "hameleon"}, {MATRIX, "matrix"}, {DNA, "DNA"}};
 
     EncButton<EB_TICK, 19> button_;
 
@@ -90,6 +93,8 @@ class Lenta : public Node {
     int getLength();
 
     byte getScale();
+
+    void WuPixel(uint32_t x, uint32_t y, CRGB* col);
 
     void setPix(int x, int y, CRGB color);
     void setLED(int x, CRGB color);
