@@ -43,6 +43,8 @@ Detailed instruction you could find in our [blog](https://2smart.com/blog/tpost/
 
 [Firmware-Uploading](Firmware-Uploading.md)
 
+[Assembling](Assembling.md)
+
 ## To Do
 * [ ] Add more modes
 * [ ] Add sheduled commands
