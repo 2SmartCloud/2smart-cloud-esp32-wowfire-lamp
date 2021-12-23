@@ -51,7 +51,7 @@ Firmware uploading instructions - [Firmware-Uploading](Firmware-Uploading.md)
 
 8. Connect **through the soldered micro-usb** power supply and check that the matrix is working.
 
-![image](static/assembling/10.jpg)
+![image](static/assembling/10.JPG)
 
 
 ## At this stage, you get a ready-to-use controller to which you can connect not only an LED matrix, but also use it as a device for controlling addressable LED strips.
