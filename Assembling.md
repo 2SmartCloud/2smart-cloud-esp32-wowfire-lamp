@@ -29,21 +29,21 @@ Firmware uploading instructions - [Firmware-Uploading](Firmware-Uploading.md)
 
 ![image](static/assembling/4.JPG)
 
-3. Solder the reset clock button to the back of the board.
+3. Unsolder all wires from the matrix, except for the ```DIN``` connector.
 
 ![image](static/assembling/5.JPG)
 
-4. Unsolder all wires from the matrix, except for the ```DIN``` connector.
+4. Solder the ```DOUT``` connector soldered from the matrix to the inner side of the board.
 
 ![image](static/assembling/6.JPG)
 
-5. Solder the ```DOUT``` connector soldered from the matrix to the inner side of the board.
+5. Solder the reset clock button to the back of the board.
 
-![image](static/assembling/7.JPG)
+![image](static/assembling/8.JPG)
 
 6. Solder the Micro-usb input to the inner side of the board.
 
-![image](static/assembling/8.JPG)
+![image](static/assembling/7.JPG)
 
 7. Solder Esp32 to the inside of the board. 
 
