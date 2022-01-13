@@ -3,6 +3,7 @@
 #define FOR_i(x, y) for (int i = (x); i < (y); i++)
 
 #include "file_system/src/file_system.h"
+#include "fonts.h"
 #include "timerMillis.h"
 
 timerMillis effTmr(100, true);
@@ -20,6 +21,7 @@ bool Lenta::Init(Homie* homie) {  // initialize toggles for notification
         ls.green_ = kDefaultColorG_;
         ls.blue_ = kDefaultColorB_;
         ls.quantity_ = kDefaultLedsQuantity_;
+        kDefaultText_.toCharArray(ls.text_, kDefaultText_.length() + 1);
     }
     leds_ptr_ = new CRGB[ls.quantity_];
     FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds_ptr_, ls.quantity_).setCorrection(TypicalLEDStrip);
@@ -30,6 +32,25 @@ bool Lenta::Init(Homie* homie) {  // initialize toggles for notification
     HandleCurrentState();
     random16_set_seed(millis());
     return status;
+}
+
+String validString(String value) {
+    const char* text = value.c_str();
+    String result = "";
+    uint8_t i = 0;
+    while (text[i] != '\0') {
+        if (i == TEXT_MAX_LENGTH - 1) {  // max text length
+            break;
+        }
+
+        if ((uint8_t)text[i] < 127) {  // supported ASCII symbols
+            result += text[i];
+        }
+
+        i++;
+    }
+
+    return String(result);
 }
 
 void Lenta::HandleCurrentState() {
@@ -76,16 +97,21 @@ void Lenta::HandleCurrentState() {
         properties_.find("brightness")->second->SetHasNewValue(false);
     }
 
+    if (properties_.find("text")->second->HasNewValue()) {
+        String text_buffer_ = validString(properties_.find("text")->second->GetValue());
+        text_buffer_.toCharArray(ls.text_, text_buffer_.length() + 1);
+
+        properties_.find("text")->second->SetValue(ls.text_);  // update value after validation
+        properties_.find("text")->second->SetHasNewValue(false);
+        new_ls_state_ = NEW_TEXT;
+    }
+
     switch (new_ls_state_) {
-        case NO_CHANGES:
-            break;
-        case NEW_COLOR:
-            break;
         case NEW_BRIGHTNESS:
             FastLED.setBrightness(ls.brightness_ * 2);
             FastLED.show();
             break;
-        case NEW_MODE:
+        default:
             break;
     }
 
@@ -120,6 +146,8 @@ void Lenta::HandleCurrentState() {
                 loading = true;
                 DNAroutine();
                 break;
+            case TEXT:
+                TextRunning();
         }
     } else if (new_ls_state_) {
         TurnOffLs();
@@ -197,6 +225,7 @@ String Lenta::GetModes() {
 bool Lenta::LoadLentaSettings() {
     if (!ReadSettings("/lentaconf.txt", reinterpret_cast<byte*>(&ls), sizeof(ls))) return false;
     String state_in_string = ls.state_ ? "true" : "false";
+
     properties_.find("state")->second->SetValue(state_in_string);
     properties_.find("state")->second->SetHasNewValue(false);
 
@@ -214,6 +243,9 @@ bool Lenta::LoadLentaSettings() {
     properties_.find("color")->second->SetHasNewValue(false);
 
     ls.quantity_ = kDefaultLedsQuantity_;
+
+    properties_.find("text")->second->SetValue(String(ls.text_));
+    properties_.find("text")->second->SetHasNewValue(false);
 
     return true;
 }
@@ -237,7 +269,7 @@ void Lenta::Parts() {
         uint16_t rndVal = 0;
         byte amount = (getScale() >> 3) + 1;
         FOR_i(0, amount) {
-            rndVal = rndVal * 2053 + 13849;  // random2053 алгоритм
+            rndVal = rndVal * 2053 + 13849;  // random2053
             int homeX = inoise16(i * 100000000ul + (nowWeekMs << 3) * speed / 255);
             homeX = map(homeX, 15000, 50000, 0, length_);
             int offsX = inoise8(i * 2500 + (nowWeekMs >> 1) * speed / 255) - 128;
@@ -283,7 +315,7 @@ void Lenta::setLED(int x, CRGB color) {
     if (x >= 0 && x < length_) leds_ptr_[x] = color;
 }
 
-// получить номер пикселя в ленте по координатам
+// get pixel by coords
 uint16_t Lenta::getPix(int x, int y) {
     int matrixW;
     matrixW = width_;
@@ -293,9 +325,9 @@ uint16_t Lenta::getPix(int x, int y) {
     thisY = y;
 
     if (!(thisY & 1))
-        return (thisY * matrixW + thisX);  // чётная строка
+        return (thisY * matrixW + thisX);  // even line
     else
-        return (thisY * matrixW + matrixW - thisX - 1);  // нечётная строка
+        return (thisY * matrixW + matrixW - thisX - 1);  // odd line
 }
 
 uint32_t Lenta::getPixColor(int x, int y) {
@@ -318,11 +350,10 @@ void Lenta::Fire(byte scale, int len) {
 
     if (loading) {
         loading = false;
-        // deltaValue = (((scale - 1U) % 11U + 1U) << 4U) - 8U; // ширина языков пламени (масштаб шума Перлина)
         deltaValue = map(scale, 0, 255, 8, 168);
         deltaHue =
-            map(deltaValue, 8U, 168U, 8U, 84U);  // высота языков пламени должна уменьшаться не так быстро, как ширина
-        step = map(255U - deltaValue, 87U, 247U, 4U, 32U);  // вероятность смещения искорки по оси ИКС
+            map(deltaValue, 8U, 168U, 8U, 84U);  // the height of the flames should not decrease as quickly as the width
+        step = map(255U - deltaValue, 87U, 247U, 4U, 32U);  // probability of displacement of the spark along the x-axis
         for (uint8_t j = 0; j < length_; j++) {
             shiftHue[j] = (length_ - 1 - j) * 255 / (length_ - 1);  // init colorfade table
         }
@@ -341,7 +372,7 @@ void Lenta::Fire(byte scale, int len) {
         }
     }
 
-    // вставляем искорки из отдельного массива
+    // insert sparks from a separate array
     for (uint8_t i = 0; i < width_ / 8; i++) {
         if (trackingObjectPosY[i] > 3U) {
             leds_ptr_[getPix(trackingObjectPosX[i], trackingObjectPosY[i])] =
@@ -361,37 +392,37 @@ void Lenta::Fire(byte scale, int len) {
     LEDS.show();
 }
 
-#define COLOR1 0x00aa00  // максимальная яркость   170
-#define COLOR2 0x00ff00  // начальный        255
-#define COLOR3 0x006e00  //  пиксель почти погас 110
-#define COLOR4 0x003c00  //  пиксель почти погас   60
-#define COLOR5 0x003200  // затухание медленней  50
-#define COLOR6 0x00a000  //  резко снижаем яркость  160
+#define COLOR1 0x00aa00  // max brightness   170
+#define COLOR2 0x00ff00  // initial color    255
+#define COLOR3 0x006e00  // the pixel is almost gone 110
+#define COLOR4 0x003c00  // the pixel is almost gone 60
+#define COLOR5 0x003200  // decay slower 50
+#define COLOR6 0x00a000  // drastically reduce brightness 160
 
 void Lenta::Matrix() {  // ------------- Matrix ---------------
     if (!effTmr.isReady()) return;
 
-    const uint8_t density = 20;  // меньше = плотнее
+    const uint8_t density = 20;
     for (uint8_t x = 0U; x < length_; x++) {
         for (uint8_t y = 0U; y < width_; y++) {
-            uint32_t thisColor = getPixColor(x, y);        // берём цвет нашего пикселя
-            uint32_t upperColor = getPixColor(x, y + 1U);  // берём цвет пикселя над нашим
-            if (upperColor >= COLOR1 && random(7 * width_) != 0U) {  // если выше нас максимальная яркость,
-                setPix(x, y, upperColor);  // игнорим этот факт с некой вероятностью или опускаем цепочку ниже
+            uint32_t thisColor = getPixColor(x, y);        // pixel color
+            uint32_t upperColor = getPixColor(x, y + 1U);  // pixel color above
+            if (upperColor >= COLOR1 && random(7 * width_) != 0U) {
+                setPix(x, y, upperColor);
             } else if (thisColor == 0U &&
-                       random(density) == 0U) {  // если наш пиксель ещё не горит, иногда зажигаем новые цепочки
+                       random(density) == 0U) {
                 setPix(x, y, COLOR2);
-            } else if (thisColor <= COLOR3) {  // если наш пиксель почти погас, стараемся сделать затухание медленней
+            } else if (thisColor <= COLOR3) {
                 if (thisColor >= COLOR4) {
                     setPix(x, y, COLOR5);
                 } else {
                     if (thisColor != 0U) setPix(x, y, 0U);
                 }
             } else {
-                if (thisColor >= COLOR1)  // если наш пиксель максимальной яркости, резко снижаем яркость
+                if (thisColor >= COLOR1)
                     setPix(x, y, 0x00a100);
                 else
-                    setPix(x, y, thisColor - 0x002800);  // в остальных случаях снижаем яркость на 1 уровень 40
+                    setPix(x, y, thisColor - 0x002800);
             }
         }
     }
@@ -455,3 +486,109 @@ void Lenta::WuPixel(uint32_t x, uint32_t y, CRGB* col) {  // awesome WuPixel pro
 }
 
 uint16_t XY(uint8_t x, uint8_t y) { return (y * 16 + x); }
+
+void Lenta::TextRunning() {
+    fillString(ls.text_, CRGB(ls.red_, ls.green_, ls.blue_), true);
+}
+
+#define TEXT_DIRECTION (1U)  // 1 - horizontal, 0 - vertically
+#define MIRR_V (0U)          // display text vertically (0 / 1)
+#define MIRR_H (0U)          // display text horizontally (0 / 1)
+
+#define TEXT_HEIGHT (4U)  // pixel offset from bottom
+#define LET_WIDTH (5U)    // symbol width (contstant = 5)
+#define LET_HEIGHT (7U)   // symbol height (contstant = 7)
+#define SPACE (1U)        // indent between symbols
+#define LETTER_COLOR (CRGB::White)  // initial color
+
+bool Lenta::fillString(const char* text, CRGB letterColor, boolean itsText) {
+    if (!text || !strlen(text)) {
+        FastLED.clear();
+        FastLED.show();
+        return true;
+    }
+    if (loading && !itsText) {
+        offset = width_;  // start from rigth side
+        loading = false;
+    }
+
+    if (millis() - scrollTimer >= 300 /* modes[EFF_TEXT].Speed */) {
+        scrollTimer = millis();
+        FastLED.clear();
+        uint8_t i = 0, j = 0;
+        while (text[i] != '\0') {
+            if ((uint8_t)text[i] > 191) {  // cyrillic symbols
+                i++;
+            } else {
+                drawLetter(text[i], offset + j * (LET_WIDTH + SPACE), letterColor);
+                i++;
+                j++;
+            }
+        }
+
+        offset--;
+        if (offset < (int16_t)(-j * (LET_WIDTH + SPACE))) {  // end of string
+            offset = width_ + 3;
+            return true;
+        }
+        FastLED.show();
+    }
+
+    return false;
+}
+
+void Lenta::drawLetter(uint8_t letter, int8_t offset, CRGB letterColor) {
+    uint8_t start_pos = 0, finish_pos = LET_WIDTH;
+
+    if (offset < (int8_t)-LET_WIDTH || offset > (int8_t)width_) {
+        return;
+    }
+    if (offset < 0) {
+        start_pos = (uint8_t)-offset;
+    }
+    if (offset > (int8_t)(width_ - LET_WIDTH)) {
+        finish_pos = (uint8_t)(width_ - offset);
+    }
+    for (uint8_t i = start_pos; i < finish_pos; i++) {
+        uint8_t thisByte;
+        if (MIRR_V) {
+            thisByte = getFont(letter, (uint8_t)(LET_WIDTH - 1 - i));
+        } else {
+            thisByte = getFont(letter, i);
+        }
+
+        for (uint8_t j = 0; j < LET_HEIGHT; j++) {
+            bool thisBit = MIRR_H ? thisByte & (1 << j) : thisByte & (1 << (LET_HEIGHT - 1 - j));
+
+            // draw colomn (i - horizontal, j - vertical)
+            if (TEXT_DIRECTION) {
+                if (thisBit) {
+                    leds_ptr_[getPix(offset + i, TEXT_HEIGHT + j)] = letterColor;
+                } else {
+                    setPix(offset + i, TEXT_HEIGHT + j, 0x000000);
+                }
+            } else {
+                if (thisBit) {
+                    leds_ptr_[getPix(i, offset + TEXT_HEIGHT + j)] = letterColor;
+                } else {
+                    setPix(i, offset + TEXT_HEIGHT + j, 0x000000);
+                }
+            }
+        }
+    }
+}
+
+uint8_t Lenta::getFont(uint8_t asciiCode,
+                       uint8_t row) {
+    asciiCode = asciiCode - '0' + 16;
+
+    if (asciiCode <= 90) {
+        return pgm_read_byte(&fontHEX[asciiCode][row]);
+    } else if (asciiCode >= 112 && asciiCode <= 159) {
+        return pgm_read_byte(&fontHEX[asciiCode - 17][row]);
+    } else if (asciiCode >= 96 && asciiCode <= 111) {
+        return pgm_read_byte(&fontHEX[asciiCode + 47][row]);
+    }
+
+    return 0;
+}

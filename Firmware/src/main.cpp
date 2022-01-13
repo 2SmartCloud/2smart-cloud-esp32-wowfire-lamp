@@ -79,11 +79,13 @@ void setup() {
     Property *lenta_color = new Property("color", "color", lenta, SENSOR, true, true, "color", "rgb");
     Property *lenta_brightness =
         new Property("brightness", "brightness", lenta, SENSOR, true, true, "integer", "0:100");
+    Property *lenta_text = new Property("text", "text", lenta, SENSOR, true, true, "string", "#");
 
     lenta->AddProperty(lenta_status);
     lenta->AddProperty(lenta_mode);
     lenta->AddProperty(lenta_color);
     lenta->AddProperty(lenta_brightness);
+    lenta->AddProperty(lenta_text);
     device.AddNode(lenta);
 
     /* -------------------- End init your nodes and properties --------------------*/

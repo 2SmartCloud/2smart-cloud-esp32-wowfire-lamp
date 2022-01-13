@@ -17,7 +17,7 @@ String product_id = "1635262012594842";
 // -------------------------------------------------------MQTT variables
 
 const char* device_name = "2Smart Lamp";
-const char* device_version = "2";
+const char* device_version = "3";
 const char* firmware_name = "1635262012594842";
 
 void HandleMessage(char* topic, byte* payload, unsigned int length);

@@ -10,6 +10,7 @@
 #include "homie.h"
 
 #define DATA_PIN 18
+#define TEXT_MAX_LENGTH 50
 
 class Lenta : public Node {
  public:
@@ -32,10 +33,11 @@ class Lenta : public Node {
         uint8_t green_;
         uint8_t blue_;
         uint16_t quantity_;
+        char text_[TEXT_MAX_LENGTH];
     } LsSettings;
 
-    enum LsNewState { NO_CHANGES, NEW_COLOR, NEW_BRIGHTNESS, NEW_MODE };
-    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON, MATRIX, DNA };
+    enum LsNewState { NO_CHANGES, NEW_COLOR, NEW_BRIGHTNESS, NEW_MODE, NEW_TEXT };
+    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON, MATRIX, DNA, TEXT };
 
     void TurnOffLs();
     void Rainbow();
@@ -47,7 +49,7 @@ class Lenta : public Node {
     void Hameleon();
     void Matrix();
     void DNAroutine();
-
+    void TextRunning();
     void ExtractColor(String color_string);
 
     bool SaveLentaSettings();
@@ -64,8 +66,9 @@ class Lenta : public Node {
     const uint8_t kDefaultColorB_ = 200;
     const uint16_t kDefaultLedsQuantity_ = length_ * width_;
     const uint16_t kSaveLentaSettingsTime_ = 5 * 1000;  // 5s
+    String kDefaultText_ = "2Smart";
 
-    byte scale_ = 100;  // масштаб (0.. 255)
+    byte scale_ = 100;  // scale (0.. 255)
     uint8_t hue = 10;
     uint8_t deltaHue = 0;
 
@@ -79,9 +82,12 @@ class Lenta : public Node {
     uint8_t counter_ = 0;
     uint32_t last_update_time_ = 0;
 
-    std::map<uint8_t, String> modes_ = {{RAINBOW, "rainbow"},   {COLOR, "color"},   {DISCO, "disco"},
-                                        {FIRE, "fire"},         {PARTS, "parts"},   {KONFETTI, "konfetti"},
-                                        {HAMELEON, "hameleon"}, {MATRIX, "matrix"}, {DNA, "DNA"}};
+    int16_t offset = width_;
+    uint32_t scrollTimer = 0LL;
+
+    std::map<uint8_t, String> modes_ = {
+        {RAINBOW, "rainbow"},   {COLOR, "color"},       {DISCO, "disco"},   {FIRE, "fire"}, {PARTS, "parts"},
+        {KONFETTI, "konfetti"}, {HAMELEON, "hameleon"}, {MATRIX, "matrix"}, {DNA, "DNA"},   {TEXT, "text"}};
 
     EncButton<EB_TICK, 19> button_;
 
@@ -89,6 +95,11 @@ class Lenta : public Node {
         true, FIRE, kDefaultBrigthness_, kDefaultColorR_, kDefaultColorG_, kDefaultColorB_, kDefaultLedsQuantity_};
 
     // ====================================================================================================================
+
+    bool fillString(const char* text, CRGB letterColor, boolean itsText);
+
+    void drawLetter(uint8_t letter, int8_t offset, CRGB letterColor);
+    uint8_t getFont(uint8_t asciiCode, uint8_t row);
 
     int getLength();
 
@@ -99,7 +110,6 @@ class Lenta : public Node {
     void setPix(int x, int y, CRGB color);
     void setLED(int x, CRGB color);
 
-    // получить номер пикселя в ленте по координатам
     uint16_t getPix(int x, int y);
     uint32_t getPixColor(int x, int y);
 };
