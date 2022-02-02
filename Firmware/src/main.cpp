@@ -129,7 +129,12 @@ void setup() {
 void loop() {
     wifi_client.Connect();
 
-    homie.HandleCurrentState();  // mqttLoop();
+    // homie requires connected wifi client
+    if (wifi_client.isConnected()) {
+        homie.HandleCurrentState();
+    } else {  // standalone mode
+        device.HandleCurrentState();
+    }
 
     if (erase_flag) {
         EraseFlash();
@@ -137,6 +142,6 @@ void loop() {
 }
 
 void HandleMessage(char *topic, byte *payload, unsigned int length) {
-    Serial.println("mess hendled");
+    Serial.println("message handled");
     homie.HandleMessage(String(topic), payload, length);
 }
