@@ -8,12 +8,8 @@
 
 timerMillis effTmr(100, true);
 
-Lenta::Lenta(const char* name, const char* id, Device* device) : Node(name, id, device) {}
-
-bool Lenta::Init(Homie* homie) {  // initialize toggles for notification
-    bool status = true;
-    if (!Node::Init(homie)) status = false;
-    if (!LoadLentaSettings()) {
+Lenta::Lenta(const char* name, const char* id, Device* device) : Node(name, id, device) {
+    if (!ReadSettings("/lentaconf.txt", reinterpret_cast<byte*>(&ls), sizeof(ls))) {
         ls.brightness_ = kDefaultBrigthness_;
         ls.state_ = true;
         ls.mode_ = FIRE;
@@ -23,14 +19,25 @@ bool Lenta::Init(Homie* homie) {  // initialize toggles for notification
         ls.quantity_ = kDefaultLedsQuantity_;
         kDefaultText_.toCharArray(ls.text_, kDefaultText_.length() + 1);
     }
+
     leds_ptr_ = new CRGB[ls.quantity_];
     FastLED.addLeds<WS2812, DATA_PIN, GRB>(leds_ptr_, ls.quantity_).setCorrection(TypicalLEDStrip);
     FastLED.setMaxPowerInVoltsAndMilliamps(5, kMax_ma_);
     new_ls_state_ = NO_CHANGES;
     FastLED.setBrightness(ls.brightness_ * 2);
     if (ls.mode_ == COLOR) new_ls_state_ = NEW_MODE;
-    HandleCurrentState();
+    button_.resetState();
+
     random16_set_seed(millis());
+}
+
+bool Lenta::Init(Homie* homie) {  // initialize toggles for notification
+    bool status = true;
+    if (!Node::Init(homie)) status = false;
+
+    LoadLentaSettings();
+    HandleCurrentState();
+
     return status;
 }
 
@@ -83,6 +90,7 @@ void Lenta::HandleCurrentState() {
         }
         new_ls_state_ = NEW_MODE;
         properties_.find("mode")->second->SetHasNewValue(false);
+        loading = true;
     }
     if (properties_.find("color")->second->HasNewValue()) {
         ExtractColor(properties_.find("color")->second->GetValue());
@@ -128,7 +136,7 @@ void Lenta::HandleCurrentState() {
                 Disco();
                 break;
             case FIRE:
-                Fire(scale_, length_);
+                Fire(scale_, length_, RED_FIRE_MODE);
                 break;
             case PARTS:
                 Parts();
@@ -143,11 +151,17 @@ void Lenta::HandleCurrentState() {
                 Matrix();
                 break;
             case DNA:
-                loading = true;
                 DNAroutine();
                 break;
             case TEXT:
                 TextRunning();
+                break;
+            case ICE_FIRE:
+                Fire(scale_, length_, BLUE_FIRE_MODE);
+                break;
+            case FOREST_FIRE:
+                Fire(scale_, length_, GREEN_FIRE_MODE);
+                break;
         }
     } else if (new_ls_state_) {
         TurnOffLs();
@@ -161,6 +175,8 @@ void Lenta::HandleCurrentState() {
         SaveLentaSettings();
         new_data_for_save_ = false;
     }
+
+    button_.resetState();
 }
 
 void Lenta::TurnOffLs() {
@@ -223,7 +239,6 @@ String Lenta::GetModes() {
 }
 
 bool Lenta::LoadLentaSettings() {
-    if (!ReadSettings("/lentaconf.txt", reinterpret_cast<byte*>(&ls), sizeof(ls))) return false;
     String state_in_string = ls.state_ ? "true" : "false";
 
     properties_.find("state")->second->SetValue(state_in_string);
@@ -241,8 +256,6 @@ bool Lenta::LoadLentaSettings() {
     snprintf(message_buffer, sizeof(message_buffer), "%d,%d,%d", ls.red_, ls.green_, ls.blue_);
     properties_.find("color")->second->SetValue(message_buffer);
     properties_.find("color")->second->SetHasNewValue(false);
-
-    ls.quantity_ = kDefaultLedsQuantity_;
 
     properties_.find("text")->second->SetValue(String(ls.text_));
     properties_.find("text")->second->SetHasNewValue(false);
@@ -337,7 +350,18 @@ uint32_t Lenta::getPixColor(int x, int y) {
             (int64_t)leds_ptr_[thisPix].b);
 }
 
-void Lenta::Fire(byte scale, int len) {
+CRGB GetFirePalette(int mode, uint8_t index, uint8_t brightness) {
+    switch (mode) {
+        case BLUE_FIRE_MODE:
+            return ColorFromPalette(BlueFire_p, index, brightness);
+        case GREEN_FIRE_MODE:
+            return ColorFromPalette(GreenFire_p, index, brightness);
+        default:
+            return ColorFromPalette(RedFire_p, index, brightness);
+    }
+}
+
+void Lenta::Fire(byte scale, int len, int mode) {
     if (!effTmr.isReady()) return;
 
     static uint8_t deltaValue;
@@ -366,8 +390,9 @@ void Lenta::Fire(byte scale, int len) {
 
     for (uint16_t i = 0; i < width_; i++) {
         for (uint16_t j = 0; j < len; j++) {
-            leds_ptr_[getPix(i, len - 1U - j)] = ColorFromPalette(
-                HeatColors_p, qsub8(inoise8(i * deltaValue, (j + ff_y + random8(2)) * deltaHue, ff_z), shiftHue[j]),
+            leds_ptr_[getPix(i, len - 1U - j)] = GetFirePalette(
+                mode,
+                qsub8(inoise8(i * deltaValue, (j + ff_y + random8(2)) * deltaHue, ff_z), shiftHue[j]),
                 255U);
         }
     }
