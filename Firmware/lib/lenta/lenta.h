@@ -12,6 +12,31 @@
 #define DATA_PIN 18
 #define TEXT_MAX_LENGTH 50
 
+#define RED_FIRE_MODE 0
+#define BLUE_FIRE_MODE 1
+#define GREEN_FIRE_MODE 2
+
+const TProgmemRGBPalette16 RedFire_p FL_PROGMEM = {
+    0x000000,
+    0x330000, 0x660000, 0x990000, 0xCC0000, 0xFF0000,
+    0xFF3300, 0xFF6600, 0xFF9900, 0xFFCC00, 0xFFFF00,
+    0xFFFF33, 0xFFFF66, 0xFFFF99, 0xFFFFCC, 0xFFFFFF
+};
+
+const TProgmemRGBPalette16 BlueFire_p FL_PROGMEM = {
+    0x000000,
+    0x000A33, 0x001247, 0x001B6B, 0x00248E, 0x002DB2,
+    0x0036D6, 0x255AF8, 0x2381FC, 0x00F3FF, 0x67F6FD,
+    0x84FFF9, 0x9BFDF8, 0xAFF9F5, 0xD9FFFD, 0xFFFFFF
+};
+
+const TProgmemRGBPalette16 GreenFire_p FL_PROGMEM = {
+    0x000000,
+    0x011A03, 0x183A01, 0x264E0B, 0x25490A, 0x3B7912,
+    0x459113, 0x57B517, 0x6BBF32, 0x7CC64A, 0x95D56B,
+    0xAADF87, 0xC2F0A3, 0xCBF3B1, 0xDBF1CD, 0xFFFFFF
+};
+
 class Lenta : public Node {
  public:
     Lenta(const char* name, const char* id, Device* device);
@@ -37,14 +62,27 @@ class Lenta : public Node {
     } LsSettings;
 
     enum LsNewState { NO_CHANGES, NEW_COLOR, NEW_BRIGHTNESS, NEW_MODE, NEW_TEXT };
-    enum LedStripStates { RAINBOW, COLOR, DISCO, FIRE, PARTS, KONFETTI, HAMELEON, MATRIX, DNA, TEXT };
+    enum LedStripStates {
+        RAINBOW,
+        COLOR,
+        DISCO,
+        FIRE,
+        PARTS,
+        KONFETTI,
+        HAMELEON,
+        MATRIX,
+        DNA,
+        TEXT,
+        ICE_FIRE,
+        FOREST_FIRE
+    };
 
     void TurnOffLs();
     void Rainbow();
     void Disco();
     void ChangeColor();
     void Parts();
-    void Fire(byte scale, int len);
+    void Fire(byte scale, int len, int mode);
     void Konfeti();
     void Hameleon();
     void Matrix();
@@ -86,8 +124,19 @@ class Lenta : public Node {
     uint32_t scrollTimer = 0LL;
 
     std::map<uint8_t, String> modes_ = {
-        {RAINBOW, "rainbow"},   {COLOR, "color"},       {DISCO, "disco"},   {FIRE, "fire"}, {PARTS, "parts"},
-        {KONFETTI, "konfetti"}, {HAMELEON, "hameleon"}, {MATRIX, "matrix"}, {DNA, "DNA"},   {TEXT, "text"}};
+        {RAINBOW, "rainbow"},
+        {COLOR, "color"},
+        {DISCO, "disco"},
+        {FIRE, "fire"},
+        {PARTS, "parts"},
+        {KONFETTI, "konfetti"},
+        {HAMELEON, "hameleon"},
+        {MATRIX, "matrix"},
+        {DNA, "DNA"},
+        {TEXT, "text"},
+        {ICE_FIRE, "ice fire"},
+        {FOREST_FIRE, "forest fire"}
+    };
 
     EncButton<EB_TICK, 19> button_;
 

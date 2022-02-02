@@ -176,7 +176,13 @@
                 * value is same as that set in file_server.c */
                 const MAX_FILE_SIZE = 2048 * 1024;
                 const MAX_FILE_SIZE_STR = "2048KB";
-                const availableFormats = ["application/octet-stream"];
+                const availableFormats = [
+                    "application/mac-binary",
+                    "application/macbinary",
+                    "application/octet-stream",
+                    "application/x-binary",
+                    "application/x-macbinary"
+                ];
                 if (fileInput.length == 0) {
                     alert("No file selected!");
                 } else if (fileInput[0].size > MAX_FILE_SIZE) {
