@@ -1,28 +1,31 @@
 # web-admin-boilerplate
 
-Первый старт:
+## First run
 ```
 $ npm ci
 ```
 
-Для запуска в дев режиме:
+## Start in developer mode
 ```
 $ npm start
 ```
 
-## Сборка билда
-Для сборки прод билда:
+## Compile build
 ```
 $ npm run build
 ```
-Для запуска в прод режиме:
+
+Run local server with production build for local testing:
 ```
 $ npm run start:prod
 ```
 
-# Использование web-admin-boilerplate
-Для добавления новых страниц (например, Settings) нужно добавить файл с разметкой страницы в /src и файл со скриптом в /src/js.
-Так же нужно добавить ссылку на новую страницу в header.html
+# Usage
 
-# Динамические стили
-Если какие-то css классы присваиваются элементам динамически, то такой класс необходимо добавить к span элементу в файле dynamicStyles.html и на страницу, в которой есть такая необходимость, следует добавить данный span : ``` <include src="./dynamicStyles.html"></include>```
+## Add new pages
+1) Add `.html` file to `src/` dir
+2) Add `.html` file with JS to `src/js` dir
+3) Add path to file in `header.html`
+
+## Dynamic styles
+Classes that added to elements in runtime should be added to `dynamiicStyles.html` as parcel remove css styles from final build that are not found in html while compiling process.
