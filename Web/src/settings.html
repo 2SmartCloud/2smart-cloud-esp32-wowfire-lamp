@@ -1,0 +1,55 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Settings</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="static/favicon.png" type="image/x-icon">
+</head>
+
+<body>
+    <include src="./header.html"></include>
+    <div id="content-wrapper" class="d-flex flex-column">
+        <div class="content">
+            <div class="container">
+                <div class="card shadow my-5">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">Settings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mt-3">
+                            <span class="col-xs-12 col-sm-5 col-md-4 col-lg-3">State</span>
+                            <label class="switch">
+                                <input type="checkbox" id="stateToggleid">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="row mt-3">
+                            <span class="col-xs-12 col-sm-5 col-md-4 col-lg-3">Color</span>
+                            <input type="color" id="colorid">
+                        </div>
+                        <div class="row mt-3">
+                            <span class="col-xs-12 col-sm-5 col-md-4 col-lg-3">Brightness</span>
+                            <input type="range" min="0" max="100" value="50" id="brightnessid">
+                            <span class="range"></span>
+                        </div>
+                        <div class="row mt-3">
+                            <span class="col-xs-12 col-sm-5 col-md-4 col-lg-3">Mode</span>
+                            <select id="selectModeid">
+                            </select>
+                        </div>
+                        <div class="saveSettingsBtn">
+                            <input type="button" value="Save" id="saveSettingsBtnid" class="btn btn-primary btn-user">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <include src="./js/settings.html"></include>
+    <include src="./js/utils.html"></include>
+    <include src="./dynamicStyles.html"></include>
+</body>
+
+</html>

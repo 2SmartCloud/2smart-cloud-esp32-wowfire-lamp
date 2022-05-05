@@ -1,13 +1,5 @@
 #include "main.h"
 
-#include "file_system/src/file_system.h"
-#include "gpio.h"
-#include "homie.h"
-#include "lenta.h"
-#include "web_server.h"
-#include "wifi_ap/src/wifi_ap.h"
-#include "wifi_client/src/wifi_client.h"
-
 MqttClient *mqtt_client = new MqttClient();
 Homie homie(mqtt_client);
 Notifier notifier(mqtt_client);
@@ -34,43 +26,6 @@ void setup() {
     }
     String ip_addr = WiFi.localIP().toString();
 
-    // ---------------------------------------------- Homie convention init
-    AutoUpdateFw *firmware = new AutoUpdateFw("Firmware", "firmware", &device);                   // (name, id, device)
-    Notifications *notifications = new Notifications("Notifications", "notifications", &device);  // (name, id, device)
-
-    Property *update_status = new Property("update status", "updatestate", firmware, SENSOR, false, false, "string");
-    Property *update_button = new Property("update button", "update", firmware, SENSOR, true, false, "boolean");
-    Property *update_time = new Property("update time", "updatetime", firmware, SENSOR, true, true, "string");
-    Property *auto_update = new Property("autoUpdate", "autoupdate", firmware, SENSOR, true, true, "boolean");
-    Property *fw_version = new Property("version", "version", firmware, SENSOR, false, true, "integer");
-    // ------------- notification`s properties
-    Property *system_notification =
-        new Property("System Notifications", "system", notifications, SENSOR, true, true, "boolean");
-    Property *update_notification =
-        new Property("Update Notifications", "update", notifications, SENSOR, true, true, "boolean");
-
-    DeviceData device_data{device_name, device_version, product_id.c_str(), ip_addr.c_str(), "esp32",
-                           mac.c_str(), "ready",        device_id.c_str()};
-    notifier.SetUserHash(person_id);
-
-    device.SetCredentials(device_data);
-    device.SetNotifier(&notifier);
-
-    Property *dev_ip = new Property("ipw", "ipw", &device, TELEMETRY, false, true, "string");
-    device.AddProperty(dev_ip);
-
-    firmware->AddProperty(fw_version);
-    firmware->AddProperty(update_status);
-    firmware->AddProperty(update_button);
-    firmware->AddProperty(update_time);
-    firmware->AddProperty(auto_update);
-    firmware->SetTimeClient(time_client);
-    device.AddNode(firmware);
-
-    notifications->AddProperty(system_notification);
-    notifications->AddProperty(update_notification);
-    device.AddNode(notifications);
-
     /* -------------------- Start init your nodes and properties --------------------*/
 
     Lenta *lenta = new Lenta("Lenta", "lenta", &device);  // (name, id, device)
@@ -81,17 +36,45 @@ void setup() {
         new Property("brightness", "brightness", lenta, SENSOR, true, true, "integer", "0:100");
     Property *lenta_text = new Property("text", "text", lenta, SENSOR, true, true, "string", "#");
 
-    lenta->AddProperty(lenta_status);
-    lenta->AddProperty(lenta_mode);
-    lenta->AddProperty(lenta_color);
-    lenta->AddProperty(lenta_brightness);
-    lenta->AddProperty(lenta_text);
-    device.AddNode(lenta);
-
     /* -------------------- End init your nodes and properties --------------------*/
 
+    // ---------------------------------------------- Homie convention init
+    AutoUpdateFw *firmware = new AutoUpdateFw("Firmware", "firmware", &device);                   // (name, id,device)
+    Notifications *notifications = new Notifications("Notifications", "notifications", &device);  // (name,id, device)
+    RstButton *rstbutton = new RstButton("ResetButton", "rstbutton", &device);                   // (name, id,device)
+
+    Property *update_status = new Property("update status", "updatestate", firmware, SENSOR, false, false, "string");
+    Property *update_button = new Property("update button", "update", firmware, SENSOR, true, false, "boolean");
+
+    UpdateTime *update_time = new UpdateTime("update time", "updatetime", firmware, SENSOR, true, true, "string");
+
+    Property *auto_update = new Property("autoUpdate", "autoupdate", firmware, SENSOR, true, true, "boolean");
+    Property *fw_version = new Property("version", "version", firmware, SENSOR, false, true, "integer");
+    Property *staging_option = new Property("Staging", "staging", firmware, SENSOR, true, true, "boolean");
+    Property *reset_button = new Property("Reset button", "resetbutton", rstbutton, SENSOR, true, false, "boolean");
+    Property *reset_state = new Property("Reset state", "resetstate", rstbutton, SENSOR, false, true,
+    "integer", "", "%");
+    // ------------- notification`s properties
+    Property *system_notification =
+        new Property("System Notifications", "system", notifications, SENSOR, true, true, "boolean");
+    Property *update_notification =
+        new Property("Update Notifications", "update", notifications, SENSOR, true, true, "boolean");
+
+    WifiSignal *wifisignal = new WifiSignal("WiFi Signal", WIFI_SIGNAL, &device,
+    TELEMETRY, false, true, "integer");
+
+    DeviceData device_data{device_name, device_version, product_id.c_str(), ip_addr.c_str(), "esp32",
+                           mac.c_str(), "ready",        device_id.c_str()};
+    notifier.SetUserHash(person_id);
+
+    device.SetCredentials(device_data);
+    device.SetNotifier(&notifier);
+
+    Property *dev_ip = new Property("ipw", "ipw", &device, TELEMETRY, false, true, "string");
+
+    firmware->SetTimeClient(time_client);
+
     homie.SetDevice(&device);
-    device.Init();
 
     WifiAp wifiAP;
     if (ssid_name == "Wifi_Name" || ssid_name == "") {
@@ -117,19 +100,18 @@ void setup() {
     ip_addr = WiFi.localIP().toString();
     Serial.print("IP: ");
     Serial.println(ip_addr);
-    dev_ip->SetValue(ip_addr);
 
     while (!homie.Init(person_id, host, broker_port, token, HandleMessage)) {
         device.HandleCurrentState();
     }
 
-    // ---------------------------------------------- Homie convention end
+    dev_ip->SetValue(ip_addr);
+    // ---------------------------------------------- Homie convention ends
 }
 
 void loop() {
     wifi_client.Connect();
 
-    // homie requires connected wifi client
     if (wifi_client.isConnected()) {
         homie.HandleCurrentState();
     } else {  // standalone mode
@@ -141,7 +123,8 @@ void loop() {
     }
 }
 
+Device *GetDevice() { return &device; }
+
 void HandleMessage(char *topic, byte *payload, unsigned int length) {
-    Serial.println("message handled");
     homie.HandleMessage(String(topic), payload, length);
 }

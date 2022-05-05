@@ -1,0 +1,102 @@
+<script>
+    let connectedWifi;
+    let stations = null;
+    const refreshbtn = document.getElementById("refreshbtn");
+    const table = document.getElementById("myTable");
+
+    window.onload = () => {
+        refreshbtn.onclick = refresh;
+        getConnectedWifi();
+        getWifi();
+        setTimeout(getWifi, 3000);
+    }
+
+    function refresh() {
+        refreshbtn.disabled = true;
+        clearTable();
+        getWifi();
+    }
+
+    function clearTable() {
+        for(let i = table.rows.length; i > 1; i--) table.deleteRow(i - 1);
+    }
+
+    function getWifi() {
+        clearTable();
+        // stations = {"WebbyLab_2.4":"3","":"3","EW11_4686":"0","EW11_4A6E":"0","Redmi\"":"0","EW11_C55A":"0","karbon":"3","EW11_C7BA":"0","Karbon_Guest":"3","2smart":"3","AGRII":"3","DIRECT-56-HP M426 LaserJet":"3","INTELLOGATE":"4","V20":"3","AGRII_GUEST":"3"};
+        // tableFill(Object.entries(stations));
+        try {
+            request('scan/v2', {
+                method: 'GET',
+                onSuccess: (stations) => {
+                    getConnectedWifi();
+                    try {
+                        if (stations) tableFill(Object.entries(JSON.parse(stations)));
+                    } catch (e) {}
+                }
+            })
+        } catch (e) {
+            console.error(e);
+        }
+    }	
+
+    function getConnectedWifi() {
+        try {
+            request('connectedwifi', {
+                method: 'GET',
+                onSuccess: (wifi) => {
+                    connectedWifi = wifi
+                }
+            })
+        } catch (e) {
+            console.error(e);
+        }
+    }	
+
+    function tableFill(stations) {
+        if (!stations.length) return;
+
+        function insertCells(item) {
+            const row = table.insertRow(-1);
+            if( connectedWifi === item[0]) {
+                row.classList.add('connectedWifi');
+            }
+            const cell1 = row.insertCell(0);
+            const cell2 = row.insertCell(1);
+            const cell3 = row.insertCell(2);
+
+            cell1.innerHTML = item[0];
+            cell2.innerHTML = item[1]?.encType === '0' ? "OPEN" : "Secured";
+            cell3.innerHTML = `${item[1]?.signal}%`;
+        };
+
+        function addRowHandlers() {
+            const rows = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < rows.length; i++) {
+                const currentRow = table.rows[i];
+                const createClickHandler = (row) => {
+                    return function() {
+                        const cell = row.getElementsByTagName("td")[0];
+                        const cell2 = row.getElementsByTagName("td")[1];
+                        const ssid = cell.innerHTML;
+                        let pass = "";
+
+                        if (cell2.innerHTML != "OPEN") {
+                            pass = prompt("Input password for " + ssid);
+                            if(pass == null) return;
+                        }
+
+                        const params = `ssid=${ssid}&pass=${pass}`;
+
+                        request(`setwifi?${params}`, {method: 'GET'});
+                    };	  
+                };
+                currentRow.onclick = createClickHandler(currentRow);
+            }
+        };
+
+        stations.forEach(insertCells);
+        addRowHandlers();
+    }
+</script>

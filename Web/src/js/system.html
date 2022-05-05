@@ -1,0 +1,95 @@
+<script>
+    let currentVersion;
+    let tabs;
+    let platformNavs;
+
+    window.onload = () => {
+        document.getElementById('pwchange').onclick = pwchange;
+        document.getElementById('reset').onclick = reset;
+        document.getElementById('reboot').onclick = reboot;
+
+        document.getElementById('submitbtn').disabled = true;
+        document.getElementById('submitbtn').classList.add('disabledBtn');
+        const fileInput = document.getElementById("newfile");
+        fileInput.onchange = upload;
+        const form = document.querySelector("form");
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            const formData = new FormData(form)
+            const response = fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                    if (response.status === 200) alert('Firmware was successfully uploaded!');
+                    else alert(`Error!\n${response.statusText}`);
+                })
+        });
+    };
+
+    function submitForm() {
+        document.getElementById('uploadform').submit();
+        return false;
+    }
+
+    function pwchange() {
+        let newPassword;
+
+        while (true) {
+            newPassword = prompt("Input new password");
+            if (newPassword == null || newPassword == "") return;
+            else break;
+        }
+        const params = `newpass=${newPassword}`;
+        request(`newauthpass?${params}`, { method: 'GET' });
+    }
+
+function reset() {
+    const res = confirm('Are you sure you want to reset your device to factory settings?');
+    if (res) {
+        request('resetdefault', { 
+            method: 'GET',
+            onSuccess: () => alert('Settings have been reset successfully!')
+        })
+    }
+}
+
+function reboot() {
+    const res = confirm('Are you sure you want to reboot your device?');
+    if (res) {
+        request('reboot', {
+            method: 'GET',
+            onSuccess: () => alert('Rebooting...')
+        })
+    }
+}
+
+function upload() {
+    document.getElementById('submitbtn').disabled = true;
+    document.getElementById('submitbtn').classList.add('disabledBtn');
+    const upload_path = "/firmware/upload"
+    const fileInput = document.getElementById("newfile").files;
+    /* Max size of an individual file. Make sure this
+    * value is same as that set in file_server.c */
+    const MAX_FILE_SIZE = 2048*1024;
+    const MAX_FILE_SIZE_STR = "2048KB";
+    const availableFormats = [
+        "application/mac-binary",
+        "application/macbinary",
+        "application/octet-stream",
+        "application/x-binary",
+        "application/x-macbinary"
+    ];
+    if (fileInput.length == 0) {
+        alert("No file selected!"); 
+    } else if (fileInput[0].size > MAX_FILE_SIZE) {
+        alert(`File size must be less than ${MAX_FILE_SIZE_STR}!`);
+    } else if (!availableFormats.includes(fileInput[0].type)) {
+        alert(`File type must be '.bin'`);
+    } else {
+        document.getElementById('submitbtn').disabled = false;
+        document.getElementById('submitbtn').classList.remove('disabledBtn');
+        document.getElementById('file-label').innerHTML = fileInput[0].name;
+    }
+}
+</script>

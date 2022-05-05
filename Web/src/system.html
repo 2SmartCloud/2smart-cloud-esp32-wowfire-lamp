@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="static/favicon.png" type="image/x-icon">
+</head>
+
+<body>
+    <include src="./header.html"></include>
+    <div class="container">
+        <div class="card shadow my-5">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Update Firmware</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <ol>
+                        <li>Select file with new firmware</li>
+                        <li>Click "Update" button</li>
+                        <li>Wait until update</li>
+                    </ol>
+                </div>
+                <div class="row">
+                    <div class="input-group m-3">
+                        <form id="uploadform" enctype="multipart/form-data" method="post" action="/firmware/upload" >
+                            <div class="customFile">
+                                <input id="newfile" name="inobinfile" type="file" class="custom-file-input" />
+                                <label class="custom-file-label" for="newfile" id="file-label">Choose file</label>
+                                <input type="submit" value="Upload" id="submitbtn" class="uploadFile" />
+                            </div>
+                        </form>                                
+                    </div>
+                </div>
+                    <div class="currentVersion">
+                        <span id="currentVersion">Current version: %FIRMWARE%</span>
+                    </div>
+                </div>
+            
+        </div>
+        <div class="card shadow my-5">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">System</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mt-4">
+                    <span class="btn-label">Admin password</span>
+                    <a href="#" class="btn btn-primary system-btn" id="pwchange">CHANGE</a>
+                </div>
+                <div class="row mt-4">
+                    <span class="btn-label">Device</span>
+                    <a href="#" class="btn btn-warning system-btn" id="reset">RESET</a>
+                </div>
+                <div class="row mt-4">
+                    <span class="btn-label">Device</span>
+                    <a href="#" class="btn btn-warning system-btn" id="reboot">REBOOT</a>
+                </div>
+            </div>
+        </div>
+        <include src="./js/system.html"></include>
+        <include src="./js/utils.html"></include>
+        <include src="./dynamicStyles.html"></include>
+</body>
+
+</html>
