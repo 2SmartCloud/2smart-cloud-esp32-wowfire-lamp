@@ -15,6 +15,8 @@
 // ----------------------------------------------------------HTTP-----------
 String ssid_name = "Wifi_Name";  // WiFi name
 String ssid_password = "";       // WiFi password
+String ap_password = "";         // initial access point password, 8-63 symbols
+                                 // |NOTE| if left empty, AP will start open, with no auth
 String person_mail = "";
 String person_id = "";
 String token = "";

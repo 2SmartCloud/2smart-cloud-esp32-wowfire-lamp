@@ -78,7 +78,8 @@ void setup() {
 
     WifiAp wifiAP;
     if (ssid_name == "Wifi_Name" || ssid_name == "") {
-        wifiAP.Start(device_name);
+        if (ap_password.length() < 8) ap_password = "";
+        wifiAP.Start(device_name, ap_password);
         web_server.Init();
     }
     while (ssid_name == "Wifi_Name" || ssid_name == "") {
