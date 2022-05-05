@@ -92,14 +92,16 @@ void WebServer::SetupWebServer() {
         });
     });
 
-    server_->on("/static/favicon.png", HTTP_GET,
-                [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/static/favicon.png", "image/png"); });
+    server_->on("/static/favicon.6fe5638d.png", HTTP_GET,
+                [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/static/favicon.6fe5638d.png",
+                "image/png"); });
 
-    server_->on("/static/logo.svg", HTTP_GET,
-                [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/static/logo.svg", "image/svg+xml"); });
+    server_->on("/logo.66f30bfe.svg", HTTP_GET,
+                [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/static/logo.66f30bfe.svg",
+                "image/svg+xml"); });
 
-    server_->on("/styles.css", HTTP_GET,
-                [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/styles.css", "text/css"); });
+    server_->on("/styles.52d37503.css", HTTP_GET,
+                [](AsyncWebServerRequest *request) { request->send(SPIFFS, "/styles.52d37503.css", "text/css"); });
 
     server_->on("/healthcheck", HTTP_GET,
                 [](AsyncWebServerRequest *request) { request->send(200, "text/html", "OK"); });
@@ -161,6 +163,30 @@ void WebServer::SetupWebServer() {
             delay(kResponseDelay_);
             ESP.restart();
         });
+    });
+
+    server_->on("/scan/v2", HTTP_GET, [this](AsyncWebServerRequest *request) {
+            DynamicJsonDocument doc(1024);
+            int n = WiFi.scanComplete();
+            if (n == WIFI_SCAN_FAILED) {
+                WiFi.scanNetworks(true);
+            } else if (n) {
+                for (int i = 0; i < n; ++i) {
+                int8_t dBm = (WiFi.RSSI(i));
+                uint8_t wifi_strenght = RSSIToPercent(dBm);
+
+                    JsonObject doc_nested = doc.createNestedObject(WiFi.SSID(i));
+                    doc_nested["encType"] = String(WiFi.encryptionType(i));
+                    doc_nested["signal"] = String(wifi_strenght);
+                }
+                WiFi.scanDelete();
+                if (WiFi.scanComplete() == WIFI_SCAN_FAILED) {
+                    WiFi.scanNetworks(true);
+                }
+            }
+            String response;
+            serializeJson(doc, response);
+            request->send(200, "application/json", response);
     });
 
     server_->on("/scan", HTTP_GET, [this](AsyncWebServerRequest *request) {

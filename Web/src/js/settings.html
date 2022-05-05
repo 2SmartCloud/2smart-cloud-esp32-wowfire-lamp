@@ -1,0 +1,85 @@
+<script>
+    let relayid;
+    let modeid;
+    let options;
+    window.onload = () => {
+        getSettingsJSON();
+
+        relayid = document.getElementById('stateToggleid');
+        modeid = document.getElementById('selectModeid');
+        brightnessid = document.getElementById('brightnessid');
+        colorid = document.getElementById('colorid');
+        saveSettingsBtnid = document.getElementById('saveSettingsBtnid');
+        saveSettingsBtnid.onclick = saveSettings;
+    }
+
+    function saveSettings() {
+        const relayState = relayid.checked ? 1 : 0;
+        const mode = options.indexOf(modeid?.value?.trim()) || 0;
+        const color = hexToRgb(colorid.value).split(',');
+        const brightness = brightnessid?.value;
+        const data = `state=${relayState}&mode=${mode}&r=${color[0]}&g=${color[1]}&b=${color[2]}&brightness=${brightness}`;
+
+        request(`update?${data}`, { method: 'GET' });
+    }
+
+    function parseSettingsJSON(jsonstring) {
+        obj = JSON.parse(jsonstring);
+        if (relayid) relayid.checked = !!obj?.data?.state;
+        if (modeid) modeid.value = obj?.data?.mode;
+        if (colorid) colorid.value = rgbToHex(obj?.data?.color) || '#035F59';
+        if (brightnessid) brightnessid.value = obj?.data?.brightness;
+        if (modeid) {
+            options = obj?.data?.states?.split(',');
+
+            for (const opt of options) {
+                const el = document.createElement("option");
+                el.textContent = opt;
+                el.value = opt;
+                modeid.appendChild(el);
+            }
+
+            if(obj?.data?.mode) {
+                modeid.value = obj?.data?.mode;
+            }
+        }
+    }
+
+    function getSettingsJSON() {
+        request('settings', { 
+            method: 'GET',
+            onSuccess: (settings) => {
+                try {
+                    parseSettingsJSON(settings);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        });
+    }
+
+    function locationDetector() {
+        const pathname = window.location.pathname.replace(/^\//, '') || 'index.html';
+        const header = document.getElementById('header');
+        const el = header.querySelectorAll(`a[href$="${pathname}"]`);
+
+        if (el.length) el[0].classList.add('bold');
+    }
+    locationDetector();
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? `${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)}` : null;
+    }
+
+    function componentToHex(c) {
+        const hex = c.toString(16);
+        return hex.length === 1 ? "0" + hex : hex;
+    }
+
+    function rgbToHex(rgb) {
+        if (!rgb) return null;
+        const [ r, g, b ] = rgb.split(',').map(x => +x);
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    }
+</script>

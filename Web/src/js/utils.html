@@ -1,0 +1,30 @@
+<script>
+    function locationDetector() {
+        const pathname = window.location.pathname.replace(/^\//, '') || 'index.html';
+        const header = document.getElementById('header');
+        const el = header.querySelectorAll(`a[href$="${pathname}"]`);
+
+        if (el.length) el[0].classList.add('bold');
+    }
+
+    function request(url, { method, onSuccess, onError }) {
+        const hostname = '';
+        switch(method) {
+            case 'GET':
+                fetch(`${hostname}/${url}`)
+                .then(response => {
+                    if (response.status === 200) {
+                        if (!onSuccess) alert(response.statusText);
+                        return response.text();
+                    }
+                    else {
+                        alert(`Error!\n${response.statusText}`);
+                        onError && onError();
+                    }
+                })
+                .then(text => onSuccess && onSuccess(text))
+                .catch((error) => alert(`Error!\n${error}`))
+        }
+    }
+    locationDetector();
+</script>

@@ -1,0 +1,62 @@
+<script>
+    let tabs;
+    let inputs;
+    let acc;
+
+    const valErrClass = 'validation-error';
+
+    window.onload = () => {
+        acc = document.getElementsByClassName('accordion');
+
+        document.getElementById('btn_save').onclick = save;
+
+        inputs = {
+            mail: document.getElementById('mailid'),
+            token: document.getElementById('tokenid'),
+            hostname: document.getElementById('hostnameid'),
+            brokerport: document.getElementById('brokerportid'),
+            product: document.getElementById('productid'),
+            device: document.getElementById('deviceid')
+        }
+
+        for (let i = 0; i < acc.length; i++) {
+            acc[i].addEventListener('click', function() {
+                this.classList.toggle('active');
+
+                const panel = this.nextElementSibling;
+
+                if (panel.style.maxHeight) {
+                    panel.style.maxHeight = null;
+                } else {
+                    panel.style.maxHeight = `${panel.scrollHeight}px`;
+                } 
+                return false;
+            });
+        }
+    }
+
+    function save() {
+        try {
+            const res = confirm('Are you sure you want to apply changes?');
+            if (res) {
+                const credentials = getCredentials();
+                const params = `mail=${credentials.mail}&token=${credentials.token}&hostname=${credentials.hostname}&brokerPort=${credentials.brokerport}&productId=${credentials.productid}&deviceId=${credentials.deviceid}`;
+                request(`setcredentials?${params}`, {method: 'GET'});
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e.message);
+        }
+    }
+
+    function getCredentials(){
+        return {
+            mail: inputs.mail.value,
+            token: inputs.token.value,
+            hostname: inputs.hostname.value,
+            brokerport: inputs.brokerport.value,
+            productid: inputs.product.value,
+            deviceid: inputs.device.value
+        }
+    }
+</script>
